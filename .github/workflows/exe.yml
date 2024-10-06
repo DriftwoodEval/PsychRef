@@ -28,7 +28,7 @@ jobs:
       - name: Build windows .exe
         run: |
           .venv\Scripts\Activate.ps1
-          pyinstaller --noconfirm --onefile --windowed --clean --name "PsychRef" "psychref.py"
+          pyinstaller --noconfirm --onefile --windowed --clean --name "PsychRef" "src/psychref.py"
 
       - uses: actions/upload-artifact@v4
         with:
