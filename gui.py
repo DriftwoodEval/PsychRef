@@ -12,13 +12,13 @@ class App(customtkinter.CTk):
         super().__init__()
         App.instance = self
         self.dem_sheet = None
-        self.provider_sheet = None
-        self.insurance_sheet = None
+        self.ref_sheet = None
+        self.app_sheet = None
 
         self.title("PsychRef")
         self.geometry("700x700")
         self.grid_columnconfigure((0, 1, 2), weight=1)
-        self.grid_rowconfigure(3, weight=1)  # Make the log frame row expandable
+        self.grid_rowconfigure(4, weight=1)  # Make the log frame row expandable
 
         self.dem_sheet_button = customtkinter.CTkButton(
             self, text="Select Demographics Sheet", command=self.get_dem_sheet
@@ -32,7 +32,7 @@ class App(customtkinter.CTk):
 
         self.app_sheet_button = customtkinter.CTkButton(
             self,
-            text="Select Insurance Policies and Benefits Sheet",
+            text="Select Appointments Sheet",
             command=self.get_app_sheet,
         )
         self.app_sheet_button.grid(row=0, column=2, padx=5, pady=10)
@@ -44,24 +44,9 @@ class App(customtkinter.CTk):
             row=1, column=0, columnspan=3, padx=20, pady=10, sticky="ew"
         )
 
-        self.district_count_label = customtkinter.CTkLabel(
-            self, text="Districts searched: 0"
-        )
-        self.district_count_label.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
-
-        self.insurance_count_label = customtkinter.CTkLabel(
-            self, text="Insurance attempted: 0"
-        )
-        self.insurance_count_label.grid(row=2, column=1, padx=20, pady=10, sticky="ew")
-
-        self.provider_count_label = customtkinter.CTkLabel(
-            self, text="Clients attempted: 0"
-        )
-        self.provider_count_label.grid(row=2, column=2, padx=20, pady=10, sticky="ew")
-
         self.log_frame = customtkinter.CTkFrame(self)
         self.log_frame.grid(
-            row=3, column=0, columnspan=3, padx=20, pady=10, sticky="nsew"
+            row=4, column=0, columnspan=3, padx=20, pady=10, sticky="nsew"
         )  # Changed to "nsew" to expand in all directions
 
         self.log_text = customtkinter.CTkTextbox(
@@ -124,30 +109,15 @@ class App(customtkinter.CTk):
     def _process_data(self):
         from psychref import process_data  # Import here to avoid circular imports
 
-        process_data(self.dem_sheet, self.provider_sheet, self.insurance_sheet)
+        process_data(self.dem_sheet, self.ref_sheet, self.app_sheet)
 
     def check_process_button_state(self):
         if (
             self.dem_sheet is not None
-            and self.provider_sheet is not None
-            and self.insurance_sheet is not None
+            and self.ref_sheet is not None
+            and self.app_sheet is not None
         ):
             self.process_button.configure(state="normal")
             logging.info("All sheets loaded. Ready to process.")
         else:
             self.process_button.configure(state="disabled")
-
-    def update_district_count(self, count, client_count):
-        self.district_count_label.configure(
-            text=f"Districts searched: {count}/{client_count}"
-        )
-
-    def update_insurance_count(self, count, client_count):
-        self.insurance_count_label.configure(
-            text=f"Insurance attempted: {count}/{client_count}"
-        )
-
-    def update_provider_count(self, count, client_count):
-        self.provider_count_label.configure(
-            text=f"Clients attempted: {count}/{client_count}"
-        )
