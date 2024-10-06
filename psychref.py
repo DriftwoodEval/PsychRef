@@ -18,7 +18,20 @@ global_gui_mode = False
 PROCESSED_CLIENTS_FILE = "SentClientList.txt"
 
 
+def read_cache():
+    if os.path.exists(PROCESSED_CLIENTS_FILE):
+        with open(PROCESSED_CLIENTS_FILE, "r") as f:
+            return set(f.read().split())
+    return set()
+
+
+def write_cache(processed_clients):
+    with open(PROCESSED_CLIENTS_FILE, "w") as f:
+        f.write(" ".join(str(client_id) for client_id in processed_clients))
+
+
 def get_clients(dem_sheet, ref_sheet, app_sheet, code):
+    logging.info(f"Fetching clients with code: {code}")
     app_sheet["STARTTIME"] = pd.to_datetime(app_sheet["STARTTIME"], errors="coerce")
     future_appointments = app_sheet[app_sheet["STARTTIME"] > datetime.now()]
     target_appointments = future_appointments[
@@ -29,6 +42,7 @@ def get_clients(dem_sheet, ref_sheet, app_sheet, code):
 
     for _, appointment in target_appointments.iterrows():
         client_id = appointment["CLIENT_ID"]
+        logging.debug(f"Processing client ID: {client_id}")
 
         client_info = dem_sheet[dem_sheet["CLIENT_ID"] == client_id].iloc[0]
 
@@ -67,10 +81,12 @@ def get_clients(dem_sheet, ref_sheet, app_sheet, code):
             }
         )
 
+    logging.info(f"Found {len(results)} clients with code {code}")
     return results
 
 
 def create_referral_pdfs(clients):
+    logging.info("Creating referral PDFs")
     referral_groups = defaultdict(list)
     for client in clients:
         if client["referral_source"].lower() not in [
@@ -121,6 +137,12 @@ def create_referral_pdfs(clients):
         pdf.multi_cell(0, 10, "Thank you again!")
         pdf.multi_cell(0, 10, "Driftwood Evaluation Center")
 
+        footer_text = "Confidentiality Statement. The documents accompanying this transmission contain confidential health information that is legally protected. This information is intended only for the use of the individuals or entities listed above. If you are not the intended recipient, you are hereby notified that any disclosure, copying, distribution, or action taken in reliance on the contents of these documents is strictly prohibited if you have received this information in error, please notify the sender immediately and arrange for the return or destruction of these documents."
+
+        pdf.set_y(-42)  # Move to 30mm from bottom
+        pdf.set_font("Times", "I", 8)
+        pdf.multi_cell(0, 5, footer_text)
+
         safe_filename = referral_name.rstrip()
         pdf_filename = f"PDFs/{safe_filename}.pdf"
 
@@ -131,18 +153,34 @@ def create_referral_pdfs(clients):
             counter += 1
 
         pdf.output(pdf_filename)
+        logging.info(f"Created PDF: {pdf_filename}")
 
 
 def process_data(dem_sheet, ref_sheet, app_sheet):
+    logging.info("Starting data processing")
     os.makedirs("PDFs/", exist_ok=True)
     if dem_sheet is not None and ref_sheet is not None and app_sheet is not None:
+        processed_clients = read_cache()
         clients_96136 = get_clients(dem_sheet, ref_sheet, app_sheet, "96136")
 
-        create_referral_pdfs(clients_96136)
+        new_clients = [
+            client
+            for client in clients_96136
+            if str(client["client_id"]) not in processed_clients
+        ]
 
-        logging.info(
-            f"Found {len(clients_96136)} new clients with '96136' appointments."
-        )
+        if new_clients:
+            create_referral_pdfs(new_clients)
+
+            # Update the cache with new client IDs (as strings)
+            processed_clients.update(str(client["client_id"]) for client in new_clients)
+            write_cache(processed_clients)
+
+            logging.info(
+                f"Found {len(new_clients)} new clients with '96136' appointments."
+            )
+        else:
+            logging.info("No new clients found.")
     else:
         logging.error("One or more required sheets are missing.")
 
