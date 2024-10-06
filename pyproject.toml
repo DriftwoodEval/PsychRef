@@ -1,7 +1,7 @@
 [project]
 name = "psychref"
 version = "0.1.0"
-description = ""
+description = "A tool for processing psychological referrals and generating PDFs for the referral source"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
