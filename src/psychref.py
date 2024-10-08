@@ -16,6 +16,7 @@ from utils import (
 
 global_gui_mode = False
 PROCESSED_CLIENTS_FILE = "SentClientList.txt"
+LOGO_FILE = "Logo.jpg"
 
 
 def read_cache():
@@ -28,6 +29,14 @@ def read_cache():
 def write_cache(processed_clients):
     with open(PROCESSED_CLIENTS_FILE, "w") as f:
         f.write(" ".join(str(client_id) for client_id in processed_clients))
+
+
+def check_logo_file():
+    if not os.path.exists(LOGO_FILE):
+        warning_message = f"Warning: Logo file '{LOGO_FILE}' not found. PDFs will be generated without the logo."
+        logging.warning(warning_message)
+        return False
+    return True
 
 
 def get_clients(dem_sheet, ref_sheet, app_sheet, code):
@@ -87,6 +96,8 @@ def get_clients(dem_sheet, ref_sheet, app_sheet, code):
 
 def create_referral_pdfs(clients):
     logging.info("Creating referral PDFs")
+    logo_exists = check_logo_file()
+
     referral_groups = defaultdict(list)
     for client in clients:
         if client["referral_source"].lower() not in [
@@ -101,7 +112,10 @@ def create_referral_pdfs(clients):
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Times", size=12)
-        pdf.image("Logo.jpg", w=100, x=50)
+        if logo_exists:
+            pdf.image(LOGO_FILE, w=100, x=50)
+        else:
+            pdf.cell(0, 10, "Driftwood Evaluation Center", 0, 1, "C")
 
         referral_name = referral_source.split("(")[0].strip().title()
 
