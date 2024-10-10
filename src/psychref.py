@@ -117,6 +117,7 @@ def create_referral_pdfs(clients):
         else:
             pdf.cell(0, 10, "Driftwood Evaluation Center", 0, 1, "C")
 
+        filename = referral_source.split("(")[1].strip().split(")")[0].title()
         referral_name = referral_source.split("(")[0].strip().title()
 
         pdf.ln(5)
@@ -157,13 +158,12 @@ def create_referral_pdfs(clients):
         pdf.set_font("Times", "I", 8)
         pdf.multi_cell(0, 5, footer_text)
 
-        safe_filename = referral_name.rstrip()
-        pdf_filename = f"PDFs/{safe_filename}.pdf"
+        pdf_filename = f"PDFs/{filename}.pdf"
 
         # Check if the file already exists
         counter = 1
         while os.path.exists(pdf_filename):
-            pdf_filename = f"PDFs/{safe_filename}_{counter}.pdf"
+            pdf_filename = f"PDFs/{filename}_{counter}.pdf"
             counter += 1
 
         pdf.output(pdf_filename)
@@ -193,6 +193,7 @@ def process_data(dem_sheet, ref_sheet, app_sheet):
             logging.info(
                 f"Found {len(new_clients)} new clients with '96136' appointments."
             )
+            logging.info("Done! Check PDFs folder for new referrals.")
         else:
             logging.info("No new clients found.")
     else:
