@@ -141,7 +141,7 @@ def create_referral_pdfs(clients):
                 appointment_str = (
                     f"{client['client_name']} on "
                     f"{appointment_datetime.strftime('%m/%d/%Y')} at "
-                    f"{appointment_datetime.strftime('%-I:%M %p')}"
+                    f"{appointment_datetime.strftime('%I:%M %p').lstrip("0")}"
                 )
             else:
                 appointment_str = f"{client['client_name']} - Appointment time unknown"
