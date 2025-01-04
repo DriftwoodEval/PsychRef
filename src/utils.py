@@ -1,5 +1,6 @@
 import argparse
 import logging
+from os import getcwd
 from tkinter import filedialog
 
 from chardet import detect
@@ -13,8 +14,10 @@ def truncate_text(text: str, max_length=20):
     return text
 
 
-def pick_file():
-    return filedialog.askopenfilename()
+def pick_file(title):
+    return filedialog.askopenfilename(
+        title=title, initialdir=getcwd(), filetypes=[("Allowed Types", "*.csv")]
+    )
 
 
 def parse_args():

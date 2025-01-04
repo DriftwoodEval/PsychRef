@@ -60,7 +60,7 @@ class App(customtkinter.CTk):
         setup_logger(gui_mode=True, text_widget=self.log_text)
 
     def get_dem_sheet(self):
-        file = pick_file()
+        file = pick_file("Demographics Sheet")
         if file:
             df = load_csv(file)
             if df is not None and check_file_columns(
@@ -74,7 +74,7 @@ class App(customtkinter.CTk):
                 self.dem_sheet_button.configure(text="Select Demographics Sheet")
 
     def get_ref_sheet(self):
-        file = pick_file()
+        file = pick_file("Referral Sheet")
         if file:
             df = load_csv(file)
             if df is not None and check_file_columns(
@@ -88,7 +88,7 @@ class App(customtkinter.CTk):
                 self.ref_sheet_button.configure(text="Select Referral Sheet")
 
     def get_app_sheet(self):
-        file = pick_file()
+        file = pick_file("Appointments Sheet")
         if file:
             df = load_csv(file)
             if df is not None and check_file_columns(
