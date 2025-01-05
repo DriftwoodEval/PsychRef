@@ -9,6 +9,8 @@ from fpdf import FPDF
 from constants import APP_EXPECTED_COLUMNS, DEM_EXPECTED_COLUMNS, REF_EXPECTED_COLUMNS
 from utils import (
     check_file_columns,
+    extract_fax_number,
+    format_name,
     load_csv,
     parse_args,
     setup_logger,
@@ -16,7 +18,20 @@ from utils import (
 
 global_gui_mode = False
 PROCESSED_CLIENTS_FILE = "SentClientList.txt"
+CUSTOM_DIR = "CustomDirectory.txt"
 LOGO_FILE = "Logo.jpg"
+
+
+def read_custom_dir():
+    if os.path.exists(CUSTOM_DIR):
+        with open(CUSTOM_DIR, "r") as f:
+            return f.read().strip()
+    return ""
+
+
+def write_custom_dir(directory):
+    with open(CUSTOM_DIR, "w") as f:
+        f.write(directory)
 
 
 def read_cache():
@@ -97,6 +112,10 @@ def get_clients(dem_sheet, ref_sheet, app_sheet, code):
 def create_referral_pdfs(clients):
     logging.info("Creating referral PDFs")
     logo_exists = check_logo_file()
+    custom_directory = read_custom_dir()
+    output_path = "PDFs/"
+    if custom_directory:
+        output_path = custom_directory
 
     referral_groups = defaultdict(list)
     for client in clients:
@@ -117,8 +136,9 @@ def create_referral_pdfs(clients):
         else:
             pdf.cell(0, 10, "Driftwood Evaluation Center", 0, 1, "C")
 
-        filename = referral_source.split("(")[1].strip().split(")")[0].title()
-        referral_name = referral_source.split("(")[0].strip().title()
+        referral_name = format_name(referral_source)
+        fax_number = extract_fax_number(referral_source)
+        filename = referral_name + "_" + fax_number
 
         pdf.ln(5)
         pdf.multi_cell(0, 10, f"Hi {referral_name},")
@@ -158,12 +178,12 @@ def create_referral_pdfs(clients):
         pdf.set_font("Times", "I", 8)
         pdf.multi_cell(0, 5, footer_text)
 
-        pdf_filename = f"PDFs/{filename}.pdf"
+        pdf_filename = f"{output_path}/{filename}.pdf"
 
         # Check if the file already exists
         counter = 1
         while os.path.exists(pdf_filename):
-            pdf_filename = f"PDFs/{filename}_{counter}.pdf"
+            pdf_filename = f"{output_path}/{filename}_{counter}.pdf"
             counter += 1
 
         pdf.output(pdf_filename)
@@ -172,7 +192,11 @@ def create_referral_pdfs(clients):
 
 def process_data(dem_sheet, ref_sheet, app_sheet):
     logging.info("Starting data processing")
-    os.makedirs("PDFs/", exist_ok=True)
+    custom_directory = read_custom_dir()
+    output_path = "PDFs/"
+    if custom_directory:
+        output_path = custom_directory
+    os.makedirs(output_path, exist_ok=True)
     if dem_sheet is not None and ref_sheet is not None and app_sheet is not None:
         processed_clients = read_cache()
         clients_96136 = get_clients(dem_sheet, ref_sheet, app_sheet, "96136")

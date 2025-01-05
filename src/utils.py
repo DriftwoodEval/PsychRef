@@ -1,5 +1,6 @@
 import argparse
 import logging
+import re
 from os import getcwd
 from tkinter import filedialog
 
@@ -18,6 +19,10 @@ def pick_file(title):
     return filedialog.askopenfilename(
         title=title, initialdir=getcwd(), filetypes=[("Allowed Types", "*.csv")]
     )
+
+
+def pick_folder(title):
+    return filedialog.askdirectory(title=title, initialdir=getcwd())
 
 
 def parse_args():
@@ -124,3 +129,51 @@ def check_file_columns(df, expected_columns, file_type):
         )
         return False
     return True
+
+
+def format_name(name):
+    name = re.sub(r"\(.*?\)", "", name)
+
+    name = re.sub(r"[^a-zA-Z\s]", " ", name)
+
+    # Remove double or triple spaces
+    name = re.sub(r"\s{2,}", " ", name)
+
+    # Trim leading and trailing whitespace
+    name = name.strip()
+
+    # Convert to title case with exceptions
+    exceptions = ["MUSC", "DDSN", "SC", "NC", "DSS", "MP", "LLC"]
+
+    def title_case(txt):
+        if txt.upper() in exceptions and re.search(r"\b\w+\b", txt):
+            return txt.upper()
+        else:
+            return txt.capitalize()
+
+    name = " ".join(title_case(word) for word in name.split())
+
+    return name
+
+
+def extract_fax_number(string):
+    fax_number_regex = r"\d{3}.*?\d{3}.*?\d{4}"
+    match = re.search(fax_number_regex, string)
+
+    if match:
+        return re.sub(r"\D", "", match.group(0))  # Return the first match
+    else:
+        logging.info("No fax number found in %s", string)
+        return ""  # No fax number found
+
+
+def format_fax_number(raw_fax_number):
+    # Remove non-numeric characters
+    raw_fax_number = re.sub(r"\D", "", raw_fax_number)
+
+    # Check if the fax number has 10 digits
+    if len(raw_fax_number) != 10:
+        return ""  # Invalid fax number length
+
+    # Format the fax number
+    return f"({raw_fax_number[:3]}) {raw_fax_number[3:6]}-{raw_fax_number[6:]}"

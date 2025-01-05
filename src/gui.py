@@ -4,7 +4,15 @@ import threading
 import customtkinter
 
 from constants import APP_EXPECTED_COLUMNS, DEM_EXPECTED_COLUMNS, REF_EXPECTED_COLUMNS
-from utils import check_file_columns, load_csv, pick_file, setup_logger, truncate_text
+from psychref import read_custom_dir, write_custom_dir
+from utils import (
+    check_file_columns,
+    load_csv,
+    pick_file,
+    pick_folder,
+    setup_logger,
+    truncate_text,
+)
 
 
 class App(customtkinter.CTk):
@@ -18,35 +26,52 @@ class App(customtkinter.CTk):
         self.title("PsychRef")
         self.geometry("700x700")
         self.grid_columnconfigure((0, 1, 2), weight=1)
-        self.grid_rowconfigure(4, weight=1)  # Make the log frame row expandable
+        self.grid_rowconfigure(3, weight=1)  # Make the log frame row expandable
+
+        starting_directory = read_custom_dir()
+        if starting_directory:
+            starting_directory_display = (
+                f"Current Output Directory: {starting_directory}"
+            )
+        else:
+            starting_directory_display = "Select Output Directory"
+
+        self.custom_directory_button = customtkinter.CTkButton(
+            self,
+            text=starting_directory_display,
+            command=self.set_output_dir,
+        )
+        self.custom_directory_button.grid(
+            row=0, column=0, columnspan=3, padx=5, pady=10, sticky="ew"
+        )
 
         self.dem_sheet_button = customtkinter.CTkButton(
             self, text="Select Demographics Sheet", command=self.get_dem_sheet
         )
-        self.dem_sheet_button.grid(row=0, column=0, padx=5, pady=10)
+        self.dem_sheet_button.grid(row=1, column=0, padx=5, pady=10)
 
         self.ref_sheet_button = customtkinter.CTkButton(
             self, text="Select Referral Sheet", command=self.get_ref_sheet
         )
-        self.ref_sheet_button.grid(row=0, column=1, padx=5, pady=10)
+        self.ref_sheet_button.grid(row=1, column=1, padx=5, pady=10)
 
         self.app_sheet_button = customtkinter.CTkButton(
             self,
             text="Select Appointments Sheet",
             command=self.get_app_sheet,
         )
-        self.app_sheet_button.grid(row=0, column=2, padx=5, pady=10)
+        self.app_sheet_button.grid(row=1, column=2, padx=5, pady=10)
 
         self.process_button = customtkinter.CTkButton(
             self, text="Process!", command=self.process_thread, state="disabled"
         )
         self.process_button.grid(
-            row=1, column=0, columnspan=3, padx=20, pady=10, sticky="ew"
+            row=2, column=0, columnspan=3, padx=20, pady=10, sticky="ew"
         )
 
         self.log_frame = customtkinter.CTkFrame(self)
         self.log_frame.grid(
-            row=4, column=0, columnspan=3, padx=20, pady=10, sticky="nsew"
+            row=3, column=0, columnspan=3, padx=20, pady=10, sticky="nsew"
         )  # Changed to "nsew" to expand in all directions
 
         self.log_text = customtkinter.CTkTextbox(
@@ -58,6 +83,12 @@ class App(customtkinter.CTk):
 
         # Set up custom logger
         setup_logger(gui_mode=True, text_widget=self.log_text)
+
+    def set_output_dir(self):
+        folder = pick_folder("Output Directory")
+        if folder:
+            write_custom_dir(folder)
+            self.custom_directory_button.configure(text=folder)
 
     def get_dem_sheet(self):
         file = pick_file("Demographics Sheet")
